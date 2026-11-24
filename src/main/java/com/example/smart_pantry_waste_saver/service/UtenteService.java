@@ -6,16 +6,10 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-
 import com.example.smart_pantry_waste_saver.entity.Utente;
+import com.example.smart_pantry_waste_saver.exception.ResourceNotFoundException;
+import com.example.smart_pantry_waste_saver.exception.UserAlreadyExistsException;
 import com.example.smart_pantry_waste_saver.repository.UtenteRepository;
-import jakarta.persistence.EntityExistsException;
-import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
-
 import com.example.smart_pantry_waste_saver.dto.PasswordUpdateRequest;
 import com.example.smart_pantry_waste_saver.dto.UtenteCreateRequest;
 import com.example.smart_pantry_waste_saver.dto.UtenteResponse;
@@ -59,8 +53,7 @@ public class UtenteService {
 	//getByID - recupera un utente tramite ID
 	public UtenteResponse findUtenteById(Long id) {
 	    Utente utente = repo.findById(id)
-	        .orElseThrow(() -> new ResponseStatusException( HttpStatus.NOT_FOUND, "Utente con ID " + id + " non trovato" ));
-
+	        .orElseThrow(() -> new ResourceNotFoundException("Utente con ID " + id + " non trovato" ));
 	    return toResponse(utente);
 	}
 	
@@ -68,16 +61,17 @@ public class UtenteService {
 	public Utente createUtenteByEmail(Utente utente) {
 	 // Gestione di un errore | email già presente
 	 if(repo.existsByEmail(utente.getEmail())) {
-		throw new EntityNotFoundException("email/numero di telefono già presente");
+		throw new UserAlreadyExistsException("email già presente " + utente.getEmail());
 	    }
 	 
 	 System.out.println("Utente " + utente.getNome() + " " + utente.getCognome() + " inserito nel DB");
 		return repo.save(utente);
 	}
+	
 	public Utente createUtenteByUsername(Utente utente) {
 		// Gestione di un errore | email già presente
 		if(repo.existsByUsername(utente.getUsername())) {
-			throw new EntityNotFoundException("email/numero di telefono già presente");
+			throw new UserAlreadyExistsException("username già presente " + utente.getUsername());
 		}
 		
 		System.out.println("Utente " + utente.getNome() + " " + utente.getCognome() + " inserito nel DB");
@@ -86,8 +80,15 @@ public class UtenteService {
 	
 	public UtenteResponse updateUtente(Long id, UtenteCreateRequest request) {
 	    Utente utente = repo.findById(id)
-	            .orElseThrow(() -> new RuntimeException("Utente con ID " + id + " non trovato" ));
+	            .orElseThrow(() -> new ResourceNotFoundException("Utente con ID " + id + " non trovato" ));
 	
+	    if (!utente.getEmail().equals(request.email()) && repo.existsByEmail(request.email())) {
+	        throw new UserAlreadyExistsException("Email già registrata: " + request.email());
+	    }
+	    if (!utente.getUsername().equals(request.username()) && repo.existsByUsername(request.username())) {
+	        throw new UserAlreadyExistsException("Username già utilizzato: " + request.username() );
+	    }
+	    
 	    utente.setNome(request.nome());
 	    utente.setCognome(request.cognome());
 	    utente.setEmail(request.email());
@@ -102,8 +103,22 @@ public class UtenteService {
 	public UtenteResponse partiallyUpdateUtente(Long id, UtenteUpdateRequest request) {
 	
 	    Utente utente = repo.findById(id)
-	            .orElseThrow(() -> new RuntimeException("Utente con ID " + id + " non trovato"));
+	            .orElseThrow(() -> new ResourceNotFoundException("Utente con ID " + id + " non trovato"));
 	
+	    if (request.email() != null
+	            && !utente.getEmail().equals(request.email())
+	            && repo.existsByEmail(request.email())) {
+
+	        throw new UserAlreadyExistsException("Email già registrata: " + request.email() );
+	    }
+
+	    if (request.username() != null
+	            && !utente.getUsername().equals(request.username())
+	            && repo.existsByUsername(request.username())) {
+
+	        throw new UserAlreadyExistsException("Username già utilizzato: " + request.username());
+	    }
+
 	    if (request.nome() != null) {
 	        utente.setNome(request.nome());
 	    }
@@ -128,7 +143,7 @@ public class UtenteService {
 
 	public void updatePassword(Long id, PasswordUpdateRequest request) {
 	    Utente utente = repo.findById(id)
-	            .orElseThrow(() -> new RuntimeException("Utente con ID " + id + " non trovato"));
+	            .orElseThrow(() -> new ResourceNotFoundException("Utente con ID " + id + " non trovato"));
 	
 	    utente.setPassword(passwordEncoder.encode(request.password()));
 	
@@ -139,7 +154,7 @@ public class UtenteService {
 	//remove
 	public void eliminaUtente(Long id) { 
 		Utente utente = repo.findById(id)
-	            .orElseThrow(() -> new RuntimeException("Utente con ID " + id + " non trovato" ));
+	            .orElseThrow(() -> new ResourceNotFoundException("Utente con ID " + id + " non trovato" ));
 	
 	    repo.delete(utente);
 	}
@@ -164,6 +179,14 @@ public class UtenteService {
 		
 
 	public UtenteResponse creaUtente(UtenteCreateRequest request) {
+	    if (repo.existsByEmail(request.email())) {
+	        throw new UserAlreadyExistsException("Email già registrata: " + request.email());
+	    }
+
+	    if (repo.existsByUsername(request.username())) {
+	        throw new UserAlreadyExistsException("Username già utilizzato: " + request.username() );
+	    }
+		
 	    Utente utente = new Utente();
 	
 	    utente.setNome(request.nome());
