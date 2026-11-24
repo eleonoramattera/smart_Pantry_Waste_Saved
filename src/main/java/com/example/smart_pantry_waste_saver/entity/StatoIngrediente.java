@@ -2,12 +2,11 @@ package com.example.smart_pantry_waste_saver.entity;
 
 public enum StatoIngrediente {
 
-    DISPONIBILE("In dispensa"),
-    IN_ESAURIMENTO("Quasi finito"),
     CONSUMATO("Consumato"),
-    IN_SCADENZA("In scadenza"),
-    SCADUTO("Scaduto e buttato"),
-    CONGELATO("In freezer");
+    IN_SCADENZA("In scadenza"),// lo calcolo in automatica
+    SCADUTO("Scaduto"), // lo calcolo in automatico
+    CONGELATO("In freezer"),
+	FRESCO("fresco"); 
 	
 	private final String descrizione;
 	

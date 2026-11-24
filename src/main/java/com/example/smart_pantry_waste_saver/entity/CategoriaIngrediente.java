@@ -10,7 +10,6 @@ public enum CategoriaIngrediente {
     LEGUMI,
     SPEZIE_E_CONDIMENTI,
     BEVANDE,
-    SURGELATI,
     DOLCI_E_SNACK
 
 }
