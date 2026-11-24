@@ -5,7 +5,6 @@ public class LoginRequest {
     private String username;
     private String password;
 
-    // Costruttore vuoto, getter e setter indispensabili per Jackson
     public LoginRequest() {}
 
     public String getEmail() {
